@@ -1,9 +1,13 @@
 package com.digitalidllc.alex_roh.newsreader;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.io.InputStream;
@@ -16,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
     private ListView newsLV;
     private final int MAX_NEWS_NUM = 10;
     private ArrayList<News> newsList = new ArrayList<>();
+    private NewsAdapter newsAdapter;
+    private SQLiteDatabase newsDatabase;
     private String[] updatedNewsNum = new String[MAX_NEWS_NUM];
 
     private class UpdatedNewsDownloader extends AsyncTask<String, Void, Boolean>{
@@ -75,16 +81,51 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        News test = new News("title","hello");
+        newsList.add(test);
+        setUpApp();
+    }
+
+    private void setUpApp(){
+        //methods have to be in this particular order
+        wireUIElements();
+        updateNewsList();
+        setUpNewsList();
+        setUpDatabase();
+    }
+
+    private void wireUIElements(){
+        newsLV = findViewById(R.id.newsLV);
+    }
+
+    private void updateNewsList(){
         UpdatedNewsDownloader updatedNewsDownloader = new UpdatedNewsDownloader();
-        Boolean updatedNewsSuccess=false;
+        Boolean updatedNewsDownloadSuccess=false;
         try{
-           updatedNewsSuccess = updatedNewsDownloader.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty").get();
+            updatedNewsDownloadSuccess = updatedNewsDownloader.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty").get();
         } catch(Exception e){
             e.printStackTrace();
         }
 
-        Log.i("updatedNewsSuccess", Boolean.toString(updatedNewsSuccess));
+        Log.i("NewsDownloadSuccess", Boolean.toString(updatedNewsDownloadSuccess));
     }
 
+    private void setUpDatabase(){
+        newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
+        newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR(256), url VARCHAR(256))");
 
+    }
+
+    private void setUpNewsList(){
+        newsAdapter = new NewsAdapter(this, newsList);
+        newsLV.setAdapter(newsAdapter);
+
+        newsLV.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+        });
+
+    }
 }

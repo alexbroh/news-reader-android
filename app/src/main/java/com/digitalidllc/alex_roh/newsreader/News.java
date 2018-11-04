@@ -12,11 +12,20 @@ public class News {
         this.mURL=URL;
     }
 
-    private String getTitle(){
+    public String getTitle(){
         return mTitle;
     }
 
-    private String getURL(){
+    private void setTitle(String title){
+        this.mTitle=title;
+    }
+
+    public String getURL(){
         return mURL;
     }
+
+    private void setURL(String url){
+        this.mURL=url;
+    }
+
 }
