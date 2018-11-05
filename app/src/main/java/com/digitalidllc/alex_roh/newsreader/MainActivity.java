@@ -144,12 +144,12 @@ public class MainActivity extends AppCompatActivity {
 
         newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
         newsDatabase.execSQL("DROP TABLE news");
-        newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR(1024), url VARCHAR(1024))");
+        newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (id INTEGER PRIMARY KEY, articleId INTEGER, title VARCHAR(1024), url VARCHAR(1024))");
         for(int i=0; i<newsList.size();++i){
             String newTitle = "\""+newsList.get(i).getTitle()+"\"";
             String newURL = "\""+newsList.get(i).getURL()+"\"";
 
-            newsDatabase.execSQL("INSERT INTO news (title, url) VALUES ("+newTitle+','+newURL+")");
+            newsDatabase.execSQL("INSERT INTO news (articleId, title, url) VALUES ("+updatedNewsNum[i]+','+newTitle+','+newURL+")");
         }
     }
 
