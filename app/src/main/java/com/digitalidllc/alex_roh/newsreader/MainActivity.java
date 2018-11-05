@@ -10,6 +10,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -40,8 +43,6 @@ public class MainActivity extends AppCompatActivity {
                 int updatedNewsNumItr = 0;
                 while(data != -1 && updatedNewsNumItr<MAX_NEWS_NUM){
                     char current = (char) data;
-                   // Log.i("currentChar", Character.toString(current));
-
                     if(current!=' '&&current!='['&&current!=']'&&current!=',') result.append(current);
                     else if(current==','){ //append to updatedNewsNum
                         updatedNewsNum[updatedNewsNumItr] = result.toString();
@@ -49,8 +50,6 @@ public class MainActivity extends AppCompatActivity {
                         updatedNewsNumItr++;
                         result = new StringBuilder();
                     }
-                  //  Log.i("updatedNewsNum", Integer.toString(updatedNewsNumItr));
-
                     data = reader.read();
                 }
                 return true;
@@ -61,18 +60,37 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class NewsDownloader extends AsyncTask<String, Void, String>{
+    private class NewsDownloader extends AsyncTask<String, Void, Boolean>{
         @Override
-        protected String doInBackground(String... urls) {
-            HttpURLConnection httpURLConnection = null;
-
+        protected Boolean doInBackground(String... urls) {
             try{
+                URL url = new URL(urls[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+                StringBuffer json = new StringBuffer(1024);
+                String tmp = "";
+
+                while((tmp = reader.readLine()) != null)
+                    json.append(tmp).append("\n");
+                reader.close();
+
+                JSONObject jsonObject = new JSONObject(json.toString());
+
+                String newsInfo = jsonObject.toString();
+                Log.i("NewsInfo", newsInfo);
+
+                News newNews = new News(jsonObject.getString("title"), jsonObject.getString("url"));
+                newsList.add(newNews);
+
+                return true;
 
             } catch(Exception e){
                 e.printStackTrace();
+                return false;
             }
-
-            return null;
         }
     }
 
@@ -81,8 +99,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        News test = new News("title","hello");
-        newsList.add(test);
         setUpApp();
     }
 
@@ -90,8 +106,9 @@ public class MainActivity extends AppCompatActivity {
         //methods have to be in this particular order
         wireUIElements();
         updateNewsList();
+
+         //setUpDatabase();
         setUpNewsList();
-        setUpDatabase();
     }
 
     private void wireUIElements(){
@@ -110,20 +127,34 @@ public class MainActivity extends AppCompatActivity {
         Log.i("NewsDownloadSuccess", Boolean.toString(updatedNewsDownloadSuccess));
     }
 
-    private void setUpDatabase(){
-        newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
-        newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR(256), url VARCHAR(256))");
+    private void setUpDatabase() {
+        for(int i=0; i<updatedNewsNum.length;++i) {
+            try {
+                NewsDownloader newsDownloader = new NewsDownloader();
+                Boolean newsDownloadSuccess = newsDownloader.execute("https://hacker-news.firebaseio.com/v0/item/"+updatedNewsNum[i]+".json?print=pretty").get();
+                Log.i("newsDownloadSuccess", Boolean.toString(newsDownloadSuccess));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
+        }
+
+        newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
+        newsDatabase.execSQL("DROP TABLE news");
+        newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR(1024), url VARCHAR(1024))");
+
+        newsDatabase.execSQL("INSERT INTO news (title,url) VALUES ('EventStore: Open-Source, Functional Database with Complex Event Processing in JS','https://github.com/eventstore/eventstore')");
     }
 
     private void setUpNewsList(){
+        //populate list
         newsAdapter = new NewsAdapter(this, newsList);
         newsLV.setAdapter(newsAdapter);
 
         newsLV.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-
+                
             }
         });
 
