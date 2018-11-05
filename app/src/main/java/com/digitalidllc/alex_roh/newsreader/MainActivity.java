@@ -1,5 +1,7 @@
 package com.digitalidllc.alex_roh.newsreader;
 
+import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -107,7 +109,8 @@ public class MainActivity extends AppCompatActivity {
         wireUIElements();
         updateNewsList();
 
-         //setUpDatabase();
+        newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
+        // setUpDatabase(); //only have to call this method once during initial app installation to download data; implemented for practice
         setUpNewsList();
     }
 
@@ -142,11 +145,38 @@ public class MainActivity extends AppCompatActivity {
         newsDatabase = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
         newsDatabase.execSQL("DROP TABLE news");
         newsDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR(1024), url VARCHAR(1024))");
+        for(int i=0; i<newsList.size();++i){
+            String newTitle = "\""+newsList.get(i).getTitle()+"\"";
+            String newURL = "\""+newsList.get(i).getURL()+"\"";
 
-        newsDatabase.execSQL("INSERT INTO news (title,url) VALUES ('EventStore: Open-Source, Functional Database with Complex Event Processing in JS','https://github.com/eventstore/eventstore')");
+            newsDatabase.execSQL("INSERT INTO news (title, url) VALUES ("+newTitle+','+newURL+")");
+        }
+    }
+
+    private void pullFromDatabase(){
+        Cursor c = newsDatabase.rawQuery("SELECT * FROM news", null);
+        int titleIndex = c.getColumnIndex("title");
+        int urlIndex = c.getColumnIndex("url");
+
+        c.moveToFirst();
+
+        while(!c.isAfterLast()){
+            String titlePulled = c.getString(titleIndex);
+            String urlPulled = c.getString(urlIndex);
+
+            Log.i("titlePulled",titlePulled);
+            Log.i("urlPulled", urlPulled);
+
+            News pulledNews = new News(titlePulled,urlPulled);
+            newsList.add(pulledNews);
+
+            c.moveToNext();
+        }
     }
 
     private void setUpNewsList(){
+        pullFromDatabase();
+
         //populate list
         newsAdapter = new NewsAdapter(this, newsList);
         newsLV.setAdapter(newsAdapter);
@@ -154,7 +184,12 @@ public class MainActivity extends AppCompatActivity {
         newsLV.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                
+                String url = newsList.get(i).getURL();
+
+                Intent intent = new Intent(getApplicationContext(), NewsViewerActivity.class);
+                intent.putExtra("url",url);
+
+                startActivity(intent);
             }
         });
 
