@@ -1,48 +1,105 @@
 package com.digitalidllc.alex_roh.newsreader;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.digitalidllc.alex_roh.newsreader.common.Constants;
 import com.digitalidllc.alex_roh.newsreader.networking.HackerNewsApi;
+import com.digitalidllc.alex_roh.newsreader.networking.news.NewsResponseSchema;
+import com.digitalidllc.alex_roh.newsreader.screens.newslist.NewsAdapter;
 
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
+import butterknife.ButterKnife;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NewsListActivity extends AppCompatActivity {
     private HackerNewsApi mHackerNewsApi;
 
-    @BindView(R.id.newsLV) private ListView newsLV;
-    private ArrayList<News> newsList = new ArrayList<>();
-    private NewsAdapter newsAdapter;
-    private SQLiteDatabase newsDatabase;
-    private String[] updatedNewsNum = new String[Constants.MAX_NEWS_NUM];
+    @BindView(R.id.newsLV) protected ListView mNewsLV;
+    private ArrayList<News> mNewsList = new ArrayList<>();
+    private NewsAdapter mNewsAdapter;
+    private String[] mUpdatedNewsNum = new String[Constants.MAX_NEWS_NUM];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
+        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
+            OkHttpClient ok=new OkHttpClient.Builder()
+                    .addInterceptor(interceptor)
+                    .build();
+            mHackerNewsApi = new Retrofit.Builder()
+                    .baseUrl(Constants.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(ok.newBuilder().connectTimeout(30, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build())
+                    .build()
+                    .create(HackerNewsApi.class);
+
+        mNewsAdapter = new NewsAdapter(this, mNewsList);
+        mNewsLV.setAdapter(mNewsAdapter);
     }
-    
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        fetchNews();
+    }
+
+    private void fetchNews(){
+        //fetch the top stories
+         mHackerNewsApi.getTopStories().enqueue(new retrofit2.Callback<List<Integer>>() {
+             //succeded to fetch top news
+             @Override
+             public void onResponse(Call<List<Integer>> call, Response<List<Integer>> response) {
+                 List<Integer> topStories = response.body();
+                 //load each article and add it to mNewsList
+                 for(int i=0; i<Constants.MAX_NEWS_NUM; i++){
+                     mHackerNewsApi.getArticle(topStories.get(i)).enqueue(new retrofit2.Callback<NewsResponseSchema>() {
+                         //succeded to fetch an article
+                         @Override
+                         public void onResponse(Call<NewsResponseSchema> call, Response<NewsResponseSchema> response) {
+                             String title= response.body().getTitle().toString();
+                             String url = response.body().getUrl().toString();
+
+                             mNewsList.add(new News(title,url));
+                             mNewsAdapter.notifyDataSetChanged();
+                         }
+
+                         //failed to fetch an article
+                         @Override
+                         public void onFailure(Call<NewsResponseSchema> call, Throwable t) {
+                                Toast.makeText(NewsListActivity.this, "Failed to load article", Toast.LENGTH_SHORT).show();
+                         }
+                     });
+                 }
+             }
+
+             //failed to fetch top news
+             @Override
+             public void onFailure(Call<List<Integer>> call, Throwable t) {
+                 Toast.makeText(NewsListActivity.this, "Failed to fetch articles", Toast.LENGTH_SHORT).show();
+             }
+         });{
+
+        }
+    }
+
     public void onNewsClicked(News news){
         //open up article in Webview
         Intent intent = new Intent(getApplicationContext(), NewsViewerActivity.class);

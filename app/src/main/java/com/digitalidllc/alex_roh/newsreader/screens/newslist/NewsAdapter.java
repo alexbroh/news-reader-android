@@ -1,4 +1,4 @@
-package com.digitalidllc.alex_roh.newsreader;
+package com.digitalidllc.alex_roh.newsreader.screens.newslist;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -9,6 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.digitalidllc.alex_roh.newsreader.News;
+import com.digitalidllc.alex_roh.newsreader.R;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +21,10 @@ import java.util.List;
 public class NewsAdapter extends ArrayAdapter<News> {
     private Context mContext;
     private List<News>  newsList;
+
+    public interface Listener {
+        void onQuestionClicked(News news);
+    }
 
     public NewsAdapter(@NonNull Context context, ArrayList<News> list) {
         super(context, 0, list);
