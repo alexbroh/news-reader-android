@@ -8,8 +8,8 @@ public class News {
     private String mURL;
 
     public News(String title, String URL){
-        this.mTitle=title;
-        this.mURL=URL;
+        mTitle=title;
+        mURL=URL;
     }
 
     public String getTitle(){
