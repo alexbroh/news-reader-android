@@ -3,6 +3,7 @@ package com.digitalidllc.alex_roh.newsreader.screens.newslist;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,16 +21,19 @@ import java.util.List;
  **/
 public class NewsAdapter extends ArrayAdapter<News> {
     private Context mContext;
-    private List<News>  newsList;
+    private List<News>  mNewsList;
 
-    public interface Listener {
-        void onQuestionClicked(News news);
+    private final OnNewsClickListener mOnNewsClickListener;
+
+    public interface OnNewsClickListener {
+        void onNewsClicked(News news);
     }
 
-    public NewsAdapter(@NonNull Context context, ArrayList<News> list) {
+    public NewsAdapter(@NonNull Context context, OnNewsClickListener onNewsClickListener, @NonNull ArrayList<News> list) {
         super(context, 0, list);
-        this.mContext = context;
-        this.newsList = list;
+        mContext = context;
+        mNewsList = list;
+        mOnNewsClickListener = onNewsClickListener;
     }
 
     @NonNull
@@ -39,10 +43,14 @@ public class NewsAdapter extends ArrayAdapter<News> {
         if(listItem == null)
             listItem = LayoutInflater.from(mContext).inflate(R.layout.news_item,parent,false);
 
-        News currentNews = newsList.get(position);
+        News currentNews = mNewsList.get(position);
 
+        //bind data
         TextView title = (TextView) listItem.findViewById(R.id.newsTV);
         title.setText(currentNews.getTitle());
+
+        //set listener
+        listItem.setOnClickListener((view) -> { mOnNewsClickListener.onNewsClicked(currentNews); });
 
         return listItem;
     }

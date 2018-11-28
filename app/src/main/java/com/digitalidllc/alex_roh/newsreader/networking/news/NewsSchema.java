@@ -24,5 +24,4 @@ public class NewsSchema {
     public String getUrl() {
         return mUrl;
     }
-
 }

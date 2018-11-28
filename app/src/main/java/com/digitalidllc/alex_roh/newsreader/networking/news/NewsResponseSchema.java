@@ -2,6 +2,9 @@ package com.digitalidllc.alex_roh.newsreader.networking.news;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Created by Alex Roh on 11/26/18.
  **/

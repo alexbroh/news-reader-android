@@ -6,5 +6,5 @@ package com.digitalidllc.alex_roh.newsreader.common;
 public final class Constants {
     private Constants() {}
     public static final String BASE_URL = "https://hacker-news.firebaseio.com/";
-    public static final int MAX_NEWS_NUM = 10;
+    public static final int MAX_NEWS_NUM = 20;
 }

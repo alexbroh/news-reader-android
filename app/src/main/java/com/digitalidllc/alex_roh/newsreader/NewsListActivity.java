@@ -1,14 +1,17 @@
 package com.digitalidllc.alex_roh.newsreader;
 
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.digitalidllc.alex_roh.newsreader.common.Constants;
 import com.digitalidllc.alex_roh.newsreader.networking.HackerNewsApi;
 import com.digitalidllc.alex_roh.newsreader.networking.news.NewsResponseSchema;
+import com.digitalidllc.alex_roh.newsreader.networking.news.NewsSchema;
 import com.digitalidllc.alex_roh.newsreader.screens.newslist.NewsAdapter;
 
 import java.util.ArrayList;
@@ -24,7 +27,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class NewsListActivity extends AppCompatActivity {
+public class NewsListActivity extends AppCompatActivity implements NewsAdapter.OnNewsClickListener{
     private HackerNewsApi mHackerNewsApi;
 
     @BindView(R.id.newsLV) protected ListView mNewsLV;
@@ -51,7 +54,7 @@ public class NewsListActivity extends AppCompatActivity {
                     .build()
                     .create(HackerNewsApi.class);
 
-        mNewsAdapter = new NewsAdapter(this, mNewsList);
+        mNewsAdapter = new NewsAdapter(this,this, mNewsList);
         mNewsLV.setAdapter(mNewsAdapter);
     }
 
@@ -74,11 +77,11 @@ public class NewsListActivity extends AppCompatActivity {
                          //succeded to fetch an article
                          @Override
                          public void onResponse(Call<NewsResponseSchema> call, Response<NewsResponseSchema> response) {
-                             String title= response.body().getTitle().toString();
-                             String url = response.body().getUrl().toString();
-
-                             mNewsList.add(new News(title,url));
-                             mNewsAdapter.notifyDataSetChanged();
+                             if(response.isSuccessful()) {
+                                 //decouple server-side implementation from application impl
+                                 NewsSchema newsSchema = new NewsSchema(response.body().getTitle(),response.body().getUrl());
+                                 bindNews(newsSchema);
+                             }
                          }
 
                          //failed to fetch an article
@@ -100,6 +103,15 @@ public class NewsListActivity extends AppCompatActivity {
         }
     }
 
+    //decouple server-side implementation details
+    private void bindNews(@NonNull NewsSchema newsSchema){
+            String title= newsSchema.getTitle();
+            String url = newsSchema.getUrl();
+            mNewsList.add(new News(title,url));
+            mNewsAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public void onNewsClicked(News news){
         //open up article in Webview
         Intent intent = new Intent(getApplicationContext(), NewsViewerActivity.class);
