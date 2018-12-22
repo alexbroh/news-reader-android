@@ -5,7 +5,7 @@ Read the top 10 stories from Hacker News.
 - Pulls the top 10 news articles via Hacker News API
 - Displays articles in-app via a webview
 
-## Minimal UI Design; Focus on Functinoality
+## Minimal UI Design; Focus on Functionality
 
 ## Libraries Used: Retrofit, OkHttp, Butterknife
 
