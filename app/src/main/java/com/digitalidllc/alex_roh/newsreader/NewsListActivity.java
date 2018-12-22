@@ -4,22 +4,18 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.ListView;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import com.digitalidllc.alex_roh.newsreader.common.Constants;
 import com.digitalidllc.alex_roh.newsreader.networking.HackerNewsApi;
 import com.digitalidllc.alex_roh.newsreader.networking.news.NewsResponseSchema;
 import com.digitalidllc.alex_roh.newsreader.networking.news.NewsSchema;
-import com.digitalidllc.alex_roh.newsreader.screens.newslist.NewsAdapter;
+import com.digitalidllc.alex_roh.newsreader.screens.newslist.NewsListViewMvcImpl;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
@@ -27,19 +23,19 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class NewsListActivity extends AppCompatActivity implements NewsAdapter.OnNewsClickListener{
+public class NewsListActivity extends AppCompatActivity implements NewsListViewMvcImpl.Listener {
     private HackerNewsApi mHackerNewsApi;
 
-    @BindView(R.id.newsLV) protected ListView mNewsLV;
-    private ArrayList<News> mNewsList = new ArrayList<>();
-    private NewsAdapter mNewsAdapter;
     private String[] mUpdatedNewsNum = new String[Constants.MAX_NEWS_NUM];
+
+    private NewsListViewMvcImpl mViewMvc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+
+        mViewMvc = new NewsListViewMvcImpl(LayoutInflater.from(this), null);
+        mViewMvc.registerListener(this);
 
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -54,8 +50,7 @@ public class NewsListActivity extends AppCompatActivity implements NewsAdapter.O
                     .build()
                     .create(HackerNewsApi.class);
 
-        mNewsAdapter = new NewsAdapter(this,this, mNewsList);
-        mNewsLV.setAdapter(mNewsAdapter);
+        setContentView(mViewMvc.getRootView());
     }
 
     @Override
@@ -107,8 +102,7 @@ public class NewsListActivity extends AppCompatActivity implements NewsAdapter.O
     private void bindNews(@NonNull NewsSchema newsSchema){
             String title= newsSchema.getTitle();
             String url = newsSchema.getUrl();
-            mNewsList.add(new News(title,url));
-            mNewsAdapter.notifyDataSetChanged();
+            mViewMvc.bindNews(title, url);
     }
 
     @Override

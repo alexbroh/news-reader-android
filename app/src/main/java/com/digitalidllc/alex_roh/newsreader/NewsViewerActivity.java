@@ -27,4 +27,10 @@ public class NewsViewerActivity extends AppCompatActivity {
 
         newsWebView.loadUrl(url);
     }
+
+    /**
+     * Created by Alex Roh on 12/21/18.
+     **/
+    public static class NewsListViewMvc {
+    }
 }

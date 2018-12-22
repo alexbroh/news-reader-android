@@ -20,8 +20,8 @@ import java.util.List;
  * Created by Alex Roh on 11/4/18.
  **/
 public class NewsAdapter extends ArrayAdapter<News> {
-    private Context mContext;
-    private List<News>  mNewsList;
+    private final Context mContext;
+    private final List<News>  mNewsList;
 
     private final OnNewsClickListener mOnNewsClickListener;
 
